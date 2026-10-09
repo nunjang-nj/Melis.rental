@@ -129,6 +129,8 @@ $("ex").onclick=e=>{e.preventDefault();const t=JSON.stringify(S);prompt("คั�
 $("im").onclick=e=>{e.preventDefault();const t=prompt("วางข้อมูลที่สำรองไว้");if(!t)return;try{const o=JSON.parse(t);if(o.products&&o.rentals&&o.expenses){S=o;save();render()}else alert("รูปแบบไม่ถูกต้อง")}catch(x){alert("รูปแบบไม่ถูกต้อง")}};
 render();
 </script>
+<script src="details.js"></script>
 <script src="import.js"></script>
 </body></html>
+
 

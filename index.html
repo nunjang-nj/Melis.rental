@@ -128,4 +128,7 @@ function vP(v){
 $("ex").onclick=e=>{e.preventDefault();const t=JSON.stringify(S);prompt("คัดลอกข้อความนี้เก็บไว้ (ใช้ 'นำเข้า' เพื่อกู้คืน)",t)};
 $("im").onclick=e=>{e.preventDefault();const t=prompt("วางข้อมูลที่สำรองไว้");if(!t)return;try{const o=JSON.parse(t);if(o.products&&o.rentals&&o.expenses){S=o;save();render()}else alert("รูปแบบไม่ถูกต้อง")}catch(x){alert("รูปแบบไม่ถูกต้อง")}};
 render();
-</script></body></html>
+</script>
+<script src="import.js"></script>
+</body></html>
+

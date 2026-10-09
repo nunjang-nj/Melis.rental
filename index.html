@@ -1,1 +1,131 @@
-index.html
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ระบบจัดการร้านเช่า</title>
+<style>
+:root{--bg:#faf7f5;--card:#fff;--tx:#2a2326;--mut:#8a7f84;--pk:#d9569a;--ln:#eee6e8;--ok:#e6f4ea;--okt:#2e7d4a;--bad:#fde8ec;--badt:#c0345a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1719;--card:#262022;--tx:#f3eced;--mut:#a79ca1;--ln:#3a3236;--ok:#1f3a2a;--okt:#7fd69f;--bad:#43202b;--badt:#ff8fae}}
+:root[data-theme="dark"]{--bg:#1b1719;--card:#262022;--tx:#f3eced;--mut:#a79ca1;--ln:#3a3236;--ok:#1f3a2a;--okt:#7fd69f;--bad:#43202b;--badt:#ff8fae}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Noto Sans Thai","Sarabun",system-ui,sans-serif;font-size:16px}
+.w{max-width:640px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 12px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:8px;margin-bottom:14px}
+.tabs button{flex:1 1 22%;border:0;background:none;color:var(--tx);padding:10px 4px;border-radius:12px;font:inherit;font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--pk);color:#fff}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:14px;margin-bottom:12px}
+.row{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--ln)}
+.row:last-child{border:0}
+.mut{color:var(--mut);font-size:13px}
+.pill{padding:6px 12px;border-radius:99px;font-size:13px;background:var(--ok);color:var(--okt);white-space:nowrap}
+.pill.b{background:var(--bad);color:var(--badt)}
+.btn{border:0;background:var(--pk);color:#fff;padding:10px 16px;border-radius:12px;font:inherit;cursor:pointer}
+.btn.g{background:var(--ln);color:var(--tx)}
+.btn.s{padding:6px 10px;font-size:13px}
+input,select{width:100%;padding:10px;border:1px solid var(--ln);border-radius:12px;font:inherit;background:var(--bg);color:var(--tx);margin:4px 0 10px}
+label{font-size:13px;color:var(--mut)}
+.dn{display:flex;align-items:center;justify-content:space-between;text-align:center}
+.bar{height:10px;border-radius:6px;background:var(--pk);min-width:2px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.big{font-size:20px;font-weight:600}
+</style></head><body><div class="w">
+<h1>📷 ระบบจัดการร้านเช่า</h1>
+<div class="tabs" id="tabs"></div>
+<div id="v"></div>
+<div class="mut" style="text-align:center;margin-top:16px">ข้อมูลเก็บในเครื่องนี้ · <a href="#" id="ex" style="color:var(--pk)">สำรองข้อมูล</a> · <a href="#" id="im" style="color:var(--pk)">นำเข้า</a></div>
+</div>
+<script>
+const TABS=[["q","เช็คคิว"],["r","เช่าอุปกรณ์"],["e","ค่าใช้จ่าย"],["h","ประวัติการเช่า"],["s","สรุปรายได้"],["p","จัดการสินค้า"]];
+const K="rentalShopV1";
+let S={products:[{id:1,name:"Ricoh GR IIIx",price:500},{id:2,name:"Canon IXY 930IS",price:250},{id:3,name:"Canon IXY 10S",price:250}],rentals:[],expenses:[],next:10};
+try{const t=localStorage.getItem(K);if(t)S=JSON.parse(t)}catch(e){}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const iso=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
+const today=()=>iso(new Date());
+const fd=s=>new Date(s+"T00:00:00").toLocaleDateString("th-TH",{day:"numeric",month:"short",year:"numeric"});
+const money=n=>"฿"+Number(n||0).toLocaleString("th-TH");
+const days=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5)+1;
+const addD=(s,n)=>{const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return iso(d)};
+const pname=id=>(S.products.find(p=>p.id==id)||{name:"(ลบแล้ว)"}).name;
+const busy=(pid,d)=>S.rentals.find(r=>r.pid==pid&&!r.done&&r.start<=d&&d<=r.end);
+let tab="q",qd=today(),draft={},yr=new Date().getFullYear();
+
+function nav(){document.getElementById("tabs").innerHTML=TABS.map(t=>`<button class="${t[0]==tab?"on":""}" data-t="${t[0]}">${t[1]}</button>`).join("")}
+document.getElementById("tabs").onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;draft={};render()}};
+const $=id=>document.getElementById(id);
+
+function render(){nav();const v=$("v");({q:vQ,r:vR,e:vE,h:vH,s:vS,p:vP})[tab](v)}
+
+function vQ(v){
+  const bk=S.products.filter(p=>busy(p.id,qd)).length;
+  v.innerHTML=`<div class="card"><div class="dn"><button class="btn g" id="pv">‹</button><div><div class="big">${fd(qd)}</div><div class="mut">ว่าง ${S.products.length-bk} · ติดคิว ${bk}</div></div><button class="btn g" id="nx">›</button></div>
+  <div class="g2" style="margin-top:10px"><input type="date" id="dp" value="${qd}"><button class="btn g" id="td" style="margin:4px 0 10px">วันนี้</button></div></div>
+  <div class="card">${S.products.map(p=>{const r=busy(p.id,qd);return `<div class="row"><div><b>${esc(p.name)}</b><div class="mut">${r?`${esc(r.cust)} · ถึง ${fd(r.end)}`:"ว่าง ไม่มีคิวจอง"}</div></div><div style="display:flex;gap:8px;align-items:center"><span class="pill ${r?"b":""}">${r?"ติดคิว":"ว่าง"}</span>${r?"":`<button class="btn s" data-b="${p.id}">จอง</button>`}</div></div>`}).join("")||'<div class="mut">ยังไม่มีสินค้า</div>'}</div>`;
+  $("pv").onclick=()=>{qd=addD(qd,-1);render()};$("nx").onclick=()=>{qd=addD(qd,1);render()};
+  $("td").onclick=()=>{qd=today();render()};$("dp").onchange=e=>{qd=e.target.value||qd;render()};
+  v.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{draft={pid:+b.dataset.b,start:qd};tab="r";render()});
+}
+
+function vR(v){
+  if(!S.products.length){v.innerHTML='<div class="card">เพิ่มสินค้าที่แท็บ "จัดการสินค้า" ก่อน</div>';return}
+  const d=Object.assign({pid:S.products[0].id,start:today(),end:"",cust:"",amt:""},draft);
+  if(!d.end)d.end=d.start;
+  v.innerHTML=`<div class="card"><label>อุปกรณ์</label><select id="fp">${S.products.map(p=>`<option value="${p.id}" ${p.id==d.pid?"selected":""}>${esc(p.name)} (${money(p.price)}/วัน)</option>`).join("")}</select>
+  <label>ชื่อผู้เช่า / เบอร์โทร</label><input id="fc" value="${esc(d.cust)}">
+  <div class="g2"><div><label>วันรับ</label><input type="date" id="fs" value="${d.start}"></div><div><label>วันคืน</label><input type="date" id="fe" value="${d.end}"></div></div>
+  <label>ยอดเงิน (บาท)</label><input type="number" id="fa" value="${d.amt}">
+  <div class="mut" id="fi" style="margin-bottom:10px"></div><button class="btn" id="sv">บันทึกการเช่า</button></div>`;
+  const calc=()=>{const p=S.products.find(x=>x.id==$("fp").value),n=days($("fs").value,$("fe").value);if(n>0&&p){$("fa").value=n*p.price;$("fi").textContent=`${n} วัน`}};
+  ["fp","fs","fe"].forEach(i=>$(i).onchange=calc);if(!d.amt)calc();
+  $("sv").onclick=()=>{
+    const pid=+$("fp").value,s=$("fs").value,e=$("fe").value;
+    if(!$("fc").value.trim())return alert("กรุณาใส่ชื่อผู้เช่า");
+    if(!s||!e||e<s)return alert("วันที่ไม่ถูกต้อง");
+    const c=S.rentals.find(r=>r.pid==pid&&!r.done&&r.start<=e&&s<=r.end);
+    if(c&&!confirm(`ช่วงนี้ติดคิวของ ${c.cust} (${fd(c.start)} - ${fd(c.end)}) จองซ้อนต่อไหม?`))return;
+    S.rentals.push({id:S.next++,pid,cust:$("fc").value.trim(),start:s,end:e,amt:+$("fa").value||0,done:false});
+    save();draft={};qd=s;tab="q";render()};
+}
+
+function vE(v){
+  const L=[...S.expenses].sort((a,b)=>b.date.localeCompare(a.date));
+  v.innerHTML=`<div class="card"><label>รายการ</label><input id="xd"><div class="g2"><div><label>จำนวนเงิน</label><input type="number" id="xa"></div><div><label>วันที่</label><input type="date" id="xt" value="${today()}"></div></div><button class="btn" id="xs">เพิ่มค่าใช้จ่าย</button></div>
+  <div class="card">${L.map(x=>`<div class="row"><div><b>${esc(x.desc)}</b><div class="mut">${fd(x.date)}</div></div><div>${money(x.amt)} <button class="btn g s" data-d="${x.id}">ลบ</button></div></div>`).join("")||'<div class="mut">ยังไม่มีรายการ</div>'}</div>`;
+  $("xs").onclick=()=>{if(!$("xd").value.trim()||!+$("xa").value)return alert("กรอกรายการและจำนวนเงิน");S.expenses.push({id:S.next++,desc:$("xd").value.trim(),amt:+$("xa").value,date:$("xt").value||today()});save();render()};
+  v.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{if(confirm("ลบรายการนี้?")){S.expenses=S.expenses.filter(x=>x.id!=b.dataset.d);save();render()}});
+}
+
+function vH(v){
+  const L=[...S.rentals].sort((a,b)=>b.start.localeCompare(a.start));
+  v.innerHTML=`<div class="card">${L.map(r=>`<div class="row"><div><b>${esc(pname(r.pid))}</b><div class="mut">${esc(r.cust)}<br>${fd(r.start)} – ${fd(r.end)}</div></div><div style="text-align:right">${money(r.amt)}<div style="margin-top:6px"><button class="btn s ${r.done?"g":""}" data-k="${r.id}">${r.done?"คืนแล้ว ✓":"รับคืน"}</button> <button class="btn g s" data-d="${r.id}">ลบ</button></div></div></div>`).join("")||'<div class="mut">ยังไม่มีประวัติการเช่า</div>'}</div>`;
+  v.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{const r=S.rentals.find(x=>x.id==b.dataset.k);r.done=!r.done;save();render()});
+  v.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{if(confirm("ลบการเช่านี้?")){S.rentals=S.rentals.filter(x=>x.id!=b.dataset.d);save();render()}});
+}
+
+function vS(v){
+  const M=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  const inc=Array(12).fill(0),exp=Array(12).fill(0);
+  S.rentals.forEach(r=>{if(+r.start.slice(0,4)==yr)inc[+r.start.slice(5,7)-1]+=r.amt});
+  S.expenses.forEach(x=>{if(+x.date.slice(0,4)==yr)exp[+x.date.slice(5,7)-1]+=x.amt});
+  const ti=inc.reduce((a,b)=>a+b,0),te=exp.reduce((a,b)=>a+b,0),mx=Math.max(1,...inc);
+  const ys=new Set([new Date().getFullYear(),yr]);S.rentals.forEach(r=>ys.add(+r.start.slice(0,4)));
+  v.innerHTML=`<div class="card"><label>ปี</label><select id="yy">${[...ys].sort().map(y=>`<option value="${y}" ${y==yr?"selected":""}>${y+543}</option>`).join("")}</select>
+  <div class="g2"><div><div class="mut">รายได้</div><div class="big">${money(ti)}</div></div><div><div class="mut">ค่าใช้จ่าย</div><div class="big">${money(te)}</div></div></div>
+  <div style="margin-top:10px" class="mut">กำไรสุทธิ</div><div class="big">${money(ti-te)}</div></div>
+  <div class="card">${M.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0"><span class="mut" style="width:42px">${m}</span><div style="flex:1"><div class="bar" style="width:${inc[i]/mx*100}%"></div></div><span style="font-size:13px;min-width:64px;text-align:right">${money(inc[i])}</span></div>`).join("")}</div>`;
+  $("yy").onchange=e=>{yr=+e.target.value;render()};
+}
+
+function vP(v){
+  v.innerHTML=`<div class="card"><label>ชื่อสินค้า</label><input id="pn"><label>ราคาเช่าต่อวัน (บาท)</label><input type="number" id="pp"><button class="btn" id="ps">เพิ่มสินค้า</button></div>
+  <div class="card">${S.products.map(p=>`<div class="row"><div><b>${esc(p.name)}</b><div class="mut">${money(p.price)}/วัน</div></div><div><button class="btn g s" data-e="${p.id}">แก้ราคา</button> <button class="btn g s" data-d="${p.id}">ลบ</button></div></div>`).join("")}</div>`;
+  $("ps").onclick=()=>{if(!$("pn").value.trim())return alert("ใส่ชื่อสินค้า");S.products.push({id:S.next++,name:$("pn").value.trim(),price:+$("pp").value||0});save();render()};
+  v.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{const p=S.products.find(x=>x.id==b.dataset.e),n=prompt("ราคาต่อวันใหม่",p.price);if(n!==null&&!isNaN(+n)){p.price=+n;save();render()}});
+  v.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{if(confirm("ลบสินค้านี้? (ประวัติเดิมยังอยู่)")){S.products=S.products.filter(x=>x.id!=b.dataset.d);save();render()}});
+}
+
+$("ex").onclick=e=>{e.preventDefault();const t=JSON.stringify(S);prompt("คัดลอกข้อความนี้เก็บไว้ (ใช้ 'นำเข้า' เพื่อกู้คืน)",t)};
+$("im").onclick=e=>{e.preventDefault();const t=prompt("วางข้อมูลที่สำรองไว้");if(!t)return;try{const o=JSON.parse(t);if(o.products&&o.rentals&&o.expenses){S=o;save();render()}else alert("รูปแบบไม่ถูกต้อง")}catch(x){alert("รูปแบบไม่ถูกต้อง")}};
+render();
+</script></body></html>

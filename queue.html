@@ -18,6 +18,7 @@ h1{font-size:22px;margin:4px 0 4px}
 .pill.w{background:var(--wn);color:var(--wnt)}
 .btn{border:0;background:var(--pk);color:#fff;padding:10px 16px;border-radius:12px;font:inherit;cursor:pointer}
 .btn.g{background:var(--ln);color:var(--tx)}
+.btn.l{background:#06c755}
 .btn.s{padding:6px 12px;font-size:13px}
 .btn:disabled{opacity:.5}
 input,select,textarea{width:100%;padding:10px;border:1px solid var(--ln);border-radius:12px;font:inherit;background:var(--bg);color:var(--tx);margin:4px 0 10px}
@@ -39,6 +40,7 @@ label{font-size:13px;color:var(--mut)}
 </div>
 <div class="card" id="list"><div class="mut">กำลังโหลด...</div></div>
 <div class="mut" style="text-align:center">ป้ายเหลือง "รออนุมัติ" = มีลูกค้าขอจองช่วงนี้แล้ว รอร้านยืนยัน</div>
+<div id="lnTop" style="margin-top:12px"></div>
 </div>
 
 <script>
@@ -46,6 +48,7 @@ label{font-size:13px;color:var(--mut)}
 const CFG={
   API:"https://script.google.com/macros/s/AKfycbwDbF1wRSvKKE8UD7Vv_KED7Y9_J2_d2bT_7_E4XUplp0eYPqdSgkh6T0zAW0haVQgz/exec",
   QR:"images/IMG_6079.jpeg",
+  LINE:"@198tvifo",
   PAY:[
     {label:"PromptPay (พร้อมเพย์)",value:"0954288595",name:"อลิษา ส."},
     {label:"โอนผ่านบัญชีธนาคาร",value:"117-196-6201",name:"ธนาคารกสิกรไทย · อลิษา ส."}
@@ -69,6 +72,11 @@ function tot(p,n){
 }
 const hit=(L,pid,s,e)=>L.some(r=>r.pid==pid&&r.start<=e&&s<=r.end);
 let D=null,slip=null;
+
+function lineBox(ref){
+  const id=CFG.LINE;if(!id)return "";
+  return '<div class="pay" style="text-align:center"><div>เพิ่มเพื่อน LINE ร้าน เพื่อยืนยันคิวได้เร็วขึ้น</div><div class="mut">'+esc(id)+(ref?' · แจ้งเลขอ้างอิง '+esc(ref):'')+'</div><a class="btn l" style="display:inline-block;margin-top:8px;text-decoration:none" href="https://line.me/R/ti/p/'+encodeURIComponent(id)+'" target="_blank" rel="noopener">แอด LINE ร้าน</a></div>';
+}
 
 async function load(){
   try{
@@ -148,7 +156,7 @@ function form(pid){
         pid,start:s,end:e,name,contact,ship,addr,map:ship?$("fmp").value.trim():"",note:$("fno").value.trim(),website:$("hp").value,slip})});
       const j=await r.json();
       if(j.ok){
-        ov.querySelector(".sheet").innerHTML='<div class="big" style="margin:8px 0">✅ ส่งคำขอจองแล้ว</div><div>ร้านจะตรวจสลิปและติดต่อกลับทาง '+esc(contact)+' เพื่อยืนยันคิว</div><div class="mut" style="margin:8px 0">เลขอ้างอิง: '+esc(j.id||"")+'</div><button class="btn" id="ok" style="width:100%;margin-top:8px">ตกลง</button>';
+        ov.querySelector(".sheet").innerHTML='<div class="big" style="margin:8px 0">✅ ส่งคำขอจองแล้ว</div><div>ร้านจะตรวจสลิปและติดต่อกลับทาง '+esc(contact)+' เพื่อยืนยันคิว</div><div class="mut" style="margin:8px 0">เลขอ้างอิง: '+esc(j.id||"")+'</div>'+lineBox(j.id)+'<button class="btn" id="ok" style="width:100%;margin-top:8px">ตกลง</button>';
         $("ok").onclick=()=>{close();load()};
       }else{showErr(j.error||"ส่งไม่สำเร็จ กรุณาลองใหม่");$("go").disabled=false;$("go").textContent="ส่งคำขอจอง"}
     }catch(x){showErr("ส่งไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่");$("go").disabled=false;$("go").textContent="ส่งคำขอจอง"}
@@ -171,7 +179,7 @@ function shrink(file){
   });
 }
 
-const t=new Date();
+$("lnTop").innerHTML=lineBox("");
 $("s").min=$("e").min=today();
 $("s").value=$("e").value=today();
 $("s").onchange=()=>{if($("e").value<$("s").value)$("e").value=$("s").value;draw()};

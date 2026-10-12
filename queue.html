@@ -45,9 +45,10 @@ label{font-size:13px;color:var(--mut)}
 /* ===== ตั้งค่าร้าน (แก้ตรงนี้) ===== */
 const CFG={
   API:"https://script.google.com/macros/s/AKfycbwDbF1wRSvKKE8UD7Vv_KED7Y9_J2_d2bT_7_E4XUplp0eYPqdSgkh6T0zAW0haVQgz/exec",
+  QR:"images/IMG_6079.jpeg",
   PAY:[
-    {label:"PromptPay",value:"ใส่เบอร์พร้อมเพย์ที่นี่",name:"ชื่อบัญชี"},
-    {label:"โอนผ่านบัญชีธนาคาร",value:"ใส่เลขบัญชีที่นี่",name:"ชื่อธนาคาร / ชื่อบัญชี"}
+    {label:"PromptPay (พร้อมเพย์)",value:"0954288595",name:"อลิษา ส."},
+    {label:"โอนผ่านบัญชีธนาคาร",value:"117-196-6201",name:"ธนาคารกสิกรไทย · อลิษา ส."}
   ]
 };
 /* ================================== */
@@ -116,6 +117,7 @@ function form(pid){
     +'<div id="fa" style="display:none"><label>ที่อยู่จัดส่ง / เบอร์ผู้รับ</label><textarea id="fad" rows="2"></textarea><label>ลิงก์ Google Maps (ถ้ามี)</label><input id="fmp" placeholder="วางลิงก์ที่นี่"><div class="mut" style="margin-bottom:8px">ค่าจัดส่ง (ถ้ามี) ร้านจะแจ้งเพิ่มทางแชท</div></div>'
     +'<label>หมายเหตุ (ถ้ามี)</label><input id="fno">'
     +'<div style="margin:6px 0"><b>โอนเงินที่</b>'+CFG.PAY.map(x=>'<div class="pay"><div class="mut">'+esc(x.label)+'</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>'+esc(x.value)+'</b>'+copyBtn(x.value)+'</div><div class="mut">'+esc(x.name)+'</div></div>').join("")+'</div>'
+    +'<div id="qrw" style="text-align:center;margin:8px 0"><img id="qr" src="'+esc(CFG.QR)+'" alt="QR โอนเงิน" style="width:100%;max-width:420px;border-radius:12px;border:1px solid var(--ln)"><div class="mut">กดค้างที่รูปเพื่อบันทึก แล้วสแกน QR จากแอปธนาคาร</div></div>'
     +'<label>แนบสลิปโอนเงิน</label><input type="file" id="fs" accept="image/*"><img id="pv" alt="" style="display:none;max-width:140px;border-radius:10px;margin-bottom:8px">'
     +'<input class="hp" id="hp" tabindex="-1" autocomplete="off" aria-hidden="true">'
     +'<div class="err" id="er" style="display:none"></div>'
@@ -125,6 +127,7 @@ function form(pid){
   const close=()=>ov.remove();
   ov.onclick=ev=>{if(ev.target===ov)close()};
   $("x").onclick=close;
+  $("qr").onerror=()=>{$("qrw").style.display="none"};
   $("fm").onchange=()=>{$("fa").style.display=+$("fm").value?"block":"none"};
   ov.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.cp);b.textContent="คัดลอกแล้ว"}catch(x){}});
   $("fs").onchange=async ev=>{

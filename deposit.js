@@ -1,6 +1,6 @@
 (function(){
 const DEF=200;
-const defDep=p=>p&&p.dep!=null&&p.dep!==""?+p.dep:(/mini/i.test(String((p&&p.name)||""))?0:DEF);
+const defDep=p=>p&&p.dep!=null&&p.dep!==""?+p.dep:DEF;
 
 const oldP=vP;
 vP=function(v){

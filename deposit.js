@@ -1,6 +1,6 @@
 (function(){
-const DEF=200;
-const defDep=p=>p&&p.dep!=null&&p.dep!==""?+p.dep:DEF;
+const DEF=500,MINI=200;
+const defDep=p=>p&&p.dep!=null&&p.dep!==""?+p.dep:(/mini/i.test(String((p&&p.name)||""))?MINI:DEF);
 
 const oldP=vP;
 vP=function(v){
@@ -12,7 +12,7 @@ vP=function(v){
     const x=document.createElement("button");
     x.className="btn g s";x.textContent="มัดจำ";x.style.marginLeft="4px";
     x.onclick=()=>{
-      const s=prompt("ค่ามัดจำของ "+p.name+" (บาท)\nใส่ 0 = ไม่เก็บมัดจำ\nเว้นว่าง = ใช้ค่าอัตโนมัติ (รุ่น mini = 0, รุ่นอื่น = "+DEF+")",p.dep!=null?p.dep:"");
+      const s=prompt("ค่ามัดจำของ "+p.name+" (บาท)\nใส่ 0 = ไม่เก็บมัดจำ\nเว้นว่าง = ใช้ค่าอัตโนมัติ (รุ่น mini = "+MINI+", รุ่นอื่น = "+DEF+")",p.dep!=null?p.dep:"");
       if(s===null)return;
       if(!s.trim()){delete p.dep;save();render();return}
       const n=parseFloat(s);
